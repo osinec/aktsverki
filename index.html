@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск документов в Яндекс.Почте</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .result.active {
+            display: block;
+        }
+        
+        .documents-list {
+            margin: 15px 0;
+        }
+        
+        .document-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: white;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .document-info {
+            flex: 1;
+        }
+        
+        .document-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .document-details {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .status.active {
+            display: block;
+        }
+        
+        .status.info {
+            background-color: #e8f4fd;
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+        
+        .status.success {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        
+        .status.error {
+            background-color: #fde8e6;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        
+        .progress {
+            margin: 15px 0;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .instructions {
+            background-color: #fffae6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .step {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .auth-section {
+            background-color: #e8f4fd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .toggle-password {
+            background: none;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Поиск документов в Яндекс.Почте</h1>
+            <p class="description">Введите ИНН организации - система найдет все документы в вашей почте</p>
+        </header>
+        
+        <div class="auth-section">
+            <h3>Подключение к Яндекс.Почте</h3>
+            <div class="form-group">
+                <label for="email">Email Яндекс.Почты</label>
+                <input type="email" id="email" placeholder="ваш_логин@yandex.ru">
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль приложения</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="password" id="password" placeholder="Пароль приложения" style="flex: 1;">
+                    <button type="button" class="toggle-password" id="togglePassword">👁️</button>
+                </div>
+                <small style="color: #7f8c8d; margin-top: 5px; display: block;">
+                    Используйте пароль приложения, а не основной пароль!
+                    <a href="https://id.yandex.ru/security/app-passwords" target="_blank" style="color: #3498db;">
+                        Как получить пароль приложения?
+                    </a>
+                </small>
+            </div>
+            <button class="btn" id="connectBtn">Подключиться к почте</button>
+        </div>
+        
+        <form id="documentForm" style="display: none;">
+            <div class="form-group">
+                <label for="inn">ИНН организации</label>
+                <input type="text" id="inn" placeholder="Введите 10 или 12 цифр ИНН" maxlength="12">
+            </div>
+            
+            <button type="submit" class="btn" id="searchBtn">🔍 Найти документы в почте</button>
+        </form>
+        
+        <div class="result" id="result">
+            <h3>Результаты поиска</h3>
+            <p>Для организации: <strong id="resultCompanyName"></strong></p>
+            <p>ИНН: <strong id="resultInn"></strong></p>
+            
+            <div class="progress" id="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="status info" id="statusInfo">
+                Начинаем поиск в почте...
+            </div>
+            
+            <div class="documents-list" id="documentsList"></div>
+            
+            <div class="instructions">
+                <p><strong>Как отправить документы клиенту:</strong></p>
+                <div class="step">1. Нажмите кнопку ниже</div>
+                <div class="step">2. В открывшейся почте вставьте email клиента</div>
+                <div class="step">3. Прикрепите найденные документы</div>
+                <div class="step">4. Нажмите "Отправить"</div>
+            </div>
+            
+            <button class="btn btn-success" id="sendEmailBtn" style="display: none;">📧 Открыть почту для отправки</button>
+        </div>
+    </div>
+
+    <!-- Подключаем библиотеку для работы с IMAP -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-imap-client@3.0.5/dist/imap.min.js"></script>
+    
+    <script>
+        // Переменные для хранения данных
+        let imapClient = null;
+        let currentDocuments = [];
+        
+        // Элементы DOM
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const connectBtn = document.getElementById('connectBtn');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const documentForm = document.getElementById('documentForm');
+        const innInput = document.getElementById('inn');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultDiv = document.getElementById('result');
+        const progressDiv = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const statusInfo = document.getElementById('statusInfo');
+        const documentsList = document.getElementById('documentsList');
+        const sendEmailBtn = document.getElementById('sendEmailBtn');
+        const resultCompanyName = document.getElementById('resultCompanyName');
+        const resultInn = document.getElementById('resultInn');
+        
+        // Переключение видимости пароля
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+        
+        // Подключение к Яндекс.Почте
+        connectBtn.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!email || !password) {
+                alert('Пожалуйста, введите email и пароль приложения');
+                return;
+            }
+            
+            if (!email.includes('@yandex.')) {
+                alert('Пожалуйста, используйте Яндекс.Почту');
+                return;
+            }
+            
+            connectBtn.disabled = true;
+            connectBtn.textContent = 'Подключение...';
+            statusInfo.classList.add('active');
+            statusInfo.textContent = 'Подключаемся к Яндекс.Почте...';
+            
+            try {
+                // Создаем IMAP клиент
+                imapClient = new ImapClient({
+                    host: 'imap.yandex.ru',
+                    port: 993,
+                    auth: {
+                        user: email,
+                        pass: password
+                    },
+                    useSecureTransport: true
+                });
+                
+                // Подключаемся к серверу
+                await imapClient.connect();
+                
+                statusInfo.textContent = '✅ Успешно подключено к Яндекс.Почте!';
+                documentForm.style.display = 'block';
+                
+                // Сохраняем данные в localStorage
+                localStorage.setItem('yandexEmail', email);
+                
+            } catch (error) {
+                console.error('Ошибка подключения:', error);
+                statusInfo.textContent = '❌ Ошибка подключения: ' + error.message;
+                statusInfo.classList.add('error');
+            } finally {
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Подключиться к почте';
+            }
+        });
+        
+        // Поиск документов по ИНН
+        documentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const inn = innInput.value.trim();
+            const innRegex = /^\d{10}$|^\d{12}$/;
+            
+            if (!innRegex.test(inn)) {
+                alert('Пожалуйста, введите корректный ИНН (10 или 12 цифр)');
+                return;
+            }
+            
+            if (!imapClient) {
+                alert('Сначала подключитесь к почте');
+                return;
+            }
+            
+            // Показываем результат
+            resultDiv.classList.add('active');
+            progressDiv.classList.add('active');
+            statusInfo.classList.add('active');
+            documentsList.innerHTML = '';
+            sendEmailBtn.style.display = 'none';
+            
+            resultCompanyName.textContent = `Организация с ИНН ${inn}`;
+            resultInn.textContent = inn;
+            
+            try {
+                await searchDocumentsInMail(inn);
+            } catch (error) {
+                console.error('Ошибка поиска:', error);
+                statusInfo.textContent = '❌ Ошибка поиска: ' + error.message;
+                statusInfo.classList.add('error');
+            }
+        });
+        
+        // Функция поиска документов в почте
+        async function searchDocumentsInMail(inn) {
+            statusInfo.textContent = 'Открываем папку входящих...';
+            progressBar.style.width = '20%';
+            
+            // Выбираем папку входящих
+            await imapClient.selectMailbox('INBOX');
+            
+            statusInfo.textContent = 'Ищем письма с документами...';
+            progressBar.style.width = '50%';
+            
+            // Ищем письма, содержащие ИНН в теме или теле письма
+            const searchCriteria = [
+                'OR',
+                ['SUBJECT', inn],
+                ['BODY', inn]
+            ];
+            
+            const messages = await imapClient.search(searchCriteria);
+            
+            statusInfo.textContent = `Найдено писем: ${messages.length}. Анализируем вложения...`;
+            progressBar.style.width = '80%';
+            
+            currentDocuments = [];
+            
+            // Ограничиваем количество анализируемых писем для скорости
+            const maxMessages = Math.min(messages.length, 10);
+            
+            for (let i = 0; i < maxMessages; i++) {
+                const messageId = messages[i];
+                
+                try {
+                    // Получаем структуру письма
+                    const messageStructure = await imapClient.listMessages(messageId, ['BODYSTRUCTURE']);
+                    const structure = messageStructure[0];
+                    
+                    // Ищем вложения
+                    if (structure.attachments && structure.attachments.length > 0) {
+                        for (const attachment of structure.attachments) {
+                            if (attachment.filename) {
+                                currentDocuments.push({
+                                    messageId: messageId,
+                                    filename: attachment.filename,
+                                    size: attachment.size || 'Неизвестно'
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Также получаем информацию о письме
+                    const messageInfo = await imapClient.listMessages(messageId, ['ENVELOPE']);
+                    const envelope = messageInfo[0].envelope;
+                    
+                    // Добавляем информацию о письме к документам
+                    const docIndex = currentDocuments.length - 1;
+                    if (docIndex >= 0) {
+                        currentDocuments[docIndex].subject = envelope.subject || 'Без темы';
+                        currentDocuments[docIndex].date = envelope.date ? new Date(envelope.date).toLocaleDateString('ru-RU') : 'Неизвестно';
+                        currentDocuments[docIndex].from = envelope.from && envelope.from[0] ? 
+                            `${envelope.from[0].name || ''} <${envelope.from[0].address}>` : 'Неизвестно';
+                    }
+                    
+                } catch (error) {
+                    console.error('Ошибка при анализе письма:', error);
+                }
+            }
+            
+            progressBar.style.width = '100%';
+            
+            // Показываем результаты
+            if (currentDocuments.length > 0) {
+                statusInfo.textContent = `✅ Найдено документов: ${currentDocuments.length}`;
+                statusInfo.classList.add('success');
+                
+                // Отображаем список документов
+                renderDocumentsList(currentDocuments);
+                
+                // Показываем кнопку отправки
+                sendEmailBtn.style.display = 'block';
+            } else {
+                statusInfo.textContent = '❌ Документы не найдены. Попробуйте другой ИНН';
+                statusInfo.classList.add('error');
+            }
+        }
+        
+        // Функция отображения списка документов
+        function renderDocumentsList(documents) {
+            documentsList.innerHTML = '';
+            
+            documents.forEach((doc, index) => {
+                const docElement = document.createElement('div');
+                docElement.className = 'document-item';
+                docElement.innerHTML = `
+                    <div class="document-info">
+                        <div class="document-name">📄 ${doc.filename}</div>
+                        <div class="document-details">
+                            Тема: ${doc.subject || 'Неизвестно'} | 
+                            От: ${doc.from || 'Неизвестно'} | 
+                            Дата: ${doc.date || 'Неизвестно'} | 
+                            Размер: ${doc.size || 'Неизвестно'}
+                        </div>
+                    </div>
+                `;
+                documentsList.appendChild(docElement);
+            });
+        }
+        
+        // Отправка документов по почте
+        sendEmailBtn.addEventListener('click', function() {
+            if (currentDocuments.length === 0) {
+                alert('Нет документов для отправки');
+                return;
+            }
+            
+            const inn = innInput.value.trim();
+            const documentsListText = currentDocuments.map(doc => `• ${doc.filename}`).join('\n');
+            
+            const subject = `Документы по ИНН ${inn}`;
+            const body = `
+Добрый день!
+
+Отправляю вам документы для организации с ИНН ${inn}:
+
+${documentsListText}
+
+Всего документов: ${currentDocuments.length}
+
+С уважением,
+Сервис поиска документов
+            `.trim();
+            
+            // Создаем mailto ссылку
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Открываем почтовый клиент
+            window.open(mailtoLink, '_blank');
+        });
+        
+        // Восстановление email из localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedEmail = localStorage.getItem('yandexEmail');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+            }
+            
+            // Автозаполнение для тестирования
+            innInput.value = '7712345678';
+        });
+    </script>
+</body>
+</html>
